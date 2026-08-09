@@ -44,6 +44,22 @@ open runs/*/report.html   # or xdg-open
 tradingbench run-campaign --config configs/campaign_smoke.yaml --max-episodes 6
 ```
 
+### Interactive learn mode
+
+Step through a real episode in a Linear/Apple/Stripe-style UI — pipeline stages, NAV chart, what the agent sees, decisions, and fills:
+
+```bash
+# uses learn_* runs if present, otherwise any completed runs/
+tradingbench viz --serve
+# or point at specific episodes
+tradingbench viz \
+  --run runs/learn_buy_and_hold_w1_1_standard \
+  --run runs/learn_momentum_lite_w1_1_standard \
+  --serve
+```
+
+Opens `http://127.0.0.1:8765`. Use ←/→ to step weeks, Space to play.
+
 ### Wire a real model
 
 ```bash

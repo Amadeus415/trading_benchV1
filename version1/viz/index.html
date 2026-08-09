@@ -1,0 +1,1289 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Trading Bench — Learn the loop</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet" />
+  <style>
+    :root {
+      --bg: #f6f7f9;
+      --bg-elevated: #ffffff;
+      --bg-subtle: #f0f1f4;
+      --bg-hover: #e9ebf0;
+      --border: rgba(15, 23, 42, 0.08);
+      --border-strong: rgba(15, 23, 42, 0.12);
+      --text: #0f172a;
+      --text-secondary: #64748b;
+      --text-tertiary: #94a3b8;
+      --accent: #5e6ad2;
+      --accent-soft: rgba(94, 106, 210, 0.10);
+      --accent-hover: #4f5bc4;
+      --good: #0d9373;
+      --good-soft: rgba(13, 147, 115, 0.10);
+      --bad: #e5484d;
+      --bad-soft: rgba(229, 72, 77, 0.10);
+      --warn: #ed9b33;
+      --shadow-sm: 0 1px 2px rgba(15, 23, 42, 0.04);
+      --shadow: 0 1px 3px rgba(15, 23, 42, 0.06), 0 8px 24px rgba(15, 23, 42, 0.04);
+      --shadow-lg: 0 4px 16px rgba(15, 23, 42, 0.06), 0 24px 48px rgba(15, 23, 42, 0.06);
+      --radius: 14px;
+      --radius-sm: 10px;
+      --radius-xs: 6px;
+      --font: "Inter", -apple-system, BlinkMacSystemFont, "Segoe UI", system-ui, sans-serif;
+      --mono: "JetBrains Mono", ui-monospace, SFMono-Regular, Menlo, monospace;
+      --ease: cubic-bezier(0.22, 1, 0.36, 1);
+    }
+
+    * { box-sizing: border-box; }
+    html { scroll-behavior: smooth; }
+    body {
+      margin: 0;
+      font-family: var(--font);
+      background: var(--bg);
+      color: var(--text);
+      line-height: 1.5;
+      -webkit-font-smoothing: antialiased;
+      min-height: 100vh;
+    }
+
+    /* subtle grid background */
+    body::before {
+      content: "";
+      position: fixed;
+      inset: 0;
+      background-image:
+        radial-gradient(ellipse 80% 50% at 50% -20%, rgba(94, 106, 210, 0.08), transparent),
+        linear-gradient(var(--border) 1px, transparent 1px),
+        linear-gradient(90deg, var(--border) 1px, transparent 1px);
+      background-size: 100% 100%, 48px 48px, 48px 48px;
+      pointer-events: none;
+      z-index: 0;
+    }
+
+    .app {
+      position: relative;
+      z-index: 1;
+      max-width: 1180px;
+      margin: 0 auto;
+      padding: 28px 24px 80px;
+    }
+
+    /* Header */
+    header.top {
+      display: flex;
+      align-items: flex-start;
+      justify-content: space-between;
+      gap: 24px;
+      margin-bottom: 28px;
+      flex-wrap: wrap;
+    }
+    .brand {
+      display: flex;
+      flex-direction: column;
+      gap: 6px;
+    }
+    .brand-row {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+    }
+    .logo {
+      width: 28px;
+      height: 28px;
+      border-radius: 8px;
+      background: linear-gradient(135deg, #5e6ad2 0%, #8b5cf6 100%);
+      box-shadow: 0 2px 8px rgba(94, 106, 210, 0.35);
+    }
+    .brand h1 {
+      margin: 0;
+      font-size: 1.25rem;
+      font-weight: 600;
+      letter-spacing: -0.03em;
+    }
+    .brand p {
+      margin: 0;
+      color: var(--text-secondary);
+      font-size: 0.925rem;
+      max-width: 42ch;
+    }
+    .badge {
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+      font-size: 0.72rem;
+      font-weight: 500;
+      color: var(--accent);
+      background: var(--accent-soft);
+      padding: 3px 9px;
+      border-radius: 999px;
+      letter-spacing: 0.02em;
+    }
+    .header-controls {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      flex-wrap: wrap;
+    }
+    select, button {
+      font-family: inherit;
+    }
+    select.run-select {
+      appearance: none;
+      background: var(--bg-elevated) url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='12' viewBox='0 0 12 12'%3E%3Cpath fill='%2364748b' d='M3 4.5L6 8l3-3.5'/%3E%3C/svg%3E") no-repeat right 12px center;
+      border: 1px solid var(--border-strong);
+      border-radius: 10px;
+      padding: 9px 36px 9px 14px;
+      font-size: 0.875rem;
+      font-weight: 500;
+      color: var(--text);
+      box-shadow: var(--shadow-sm);
+      cursor: pointer;
+      min-width: 200px;
+    }
+    select.run-select:focus {
+      outline: none;
+      border-color: var(--accent);
+      box-shadow: 0 0 0 3px var(--accent-soft);
+    }
+
+    /* Pipeline */
+    .pipeline-card {
+      background: var(--bg-elevated);
+      border: 1px solid var(--border);
+      border-radius: var(--radius);
+      box-shadow: var(--shadow);
+      padding: 20px 22px 18px;
+      margin-bottom: 20px;
+    }
+    .pipeline-head {
+      display: flex;
+      justify-content: space-between;
+      align-items: baseline;
+      gap: 16px;
+      margin-bottom: 16px;
+      flex-wrap: wrap;
+    }
+    .pipeline-head h2 {
+      margin: 0;
+      font-size: 0.8rem;
+      font-weight: 600;
+      text-transform: uppercase;
+      letter-spacing: 0.06em;
+      color: var(--text-tertiary);
+    }
+    .pipeline-head .hint {
+      font-size: 0.8rem;
+      color: var(--text-secondary);
+    }
+    .pipeline {
+      display: flex;
+      align-items: stretch;
+      gap: 0;
+      overflow-x: auto;
+      padding-bottom: 4px;
+    }
+    .pipe-step {
+      flex: 1;
+      min-width: 120px;
+      position: relative;
+      padding: 14px 14px 14px 16px;
+      border-radius: var(--radius-sm);
+      cursor: pointer;
+      transition: background 0.25s var(--ease), transform 0.25s var(--ease);
+      border: 1px solid transparent;
+    }
+    .pipe-step:hover { background: var(--bg-subtle); }
+    .pipe-step.active {
+      background: var(--accent-soft);
+      border-color: rgba(94, 106, 210, 0.2);
+    }
+    .pipe-step .num {
+      font-size: 0.7rem;
+      font-weight: 600;
+      color: var(--text-tertiary);
+      font-variant-numeric: tabular-nums;
+      margin-bottom: 6px;
+    }
+    .pipe-step.active .num { color: var(--accent); }
+    .pipe-step .label {
+      font-size: 0.95rem;
+      font-weight: 600;
+      letter-spacing: -0.02em;
+      margin-bottom: 4px;
+    }
+    .pipe-step .mini {
+      font-size: 0.75rem;
+      color: var(--text-secondary);
+      line-height: 1.35;
+    }
+    .pipe-connector {
+      width: 20px;
+      flex: 0 0 20px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      color: var(--text-tertiary);
+      font-size: 0.75rem;
+      opacity: 0.5;
+    }
+    .phase-detail {
+      margin-top: 14px;
+      padding: 14px 16px;
+      background: var(--bg-subtle);
+      border-radius: var(--radius-sm);
+      font-size: 0.875rem;
+      color: var(--text-secondary);
+      line-height: 1.55;
+      animation: fadeUp 0.35s var(--ease);
+    }
+    .phase-detail strong {
+      color: var(--text);
+      font-weight: 600;
+      display: block;
+      margin-bottom: 4px;
+      font-size: 0.9rem;
+    }
+
+    /* Step controls */
+    .controls-bar {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 16px;
+      margin-bottom: 18px;
+      flex-wrap: wrap;
+    }
+    .step-meta {
+      display: flex;
+      flex-direction: column;
+      gap: 2px;
+    }
+    .step-meta .week {
+      font-size: 1.35rem;
+      font-weight: 600;
+      letter-spacing: -0.03em;
+    }
+    .step-meta .date {
+      font-size: 0.85rem;
+      color: var(--text-secondary);
+      font-variant-numeric: tabular-nums;
+    }
+    .transport {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+    }
+    .btn {
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      gap: 6px;
+      border: 1px solid var(--border-strong);
+      background: var(--bg-elevated);
+      color: var(--text);
+      border-radius: 10px;
+      padding: 9px 14px;
+      font-size: 0.875rem;
+      font-weight: 500;
+      cursor: pointer;
+      box-shadow: var(--shadow-sm);
+      transition: background 0.15s, border-color 0.15s, transform 0.15s;
+    }
+    .btn:hover { background: var(--bg-subtle); }
+    .btn:active { transform: scale(0.98); }
+    .btn:disabled {
+      opacity: 0.4;
+      cursor: not-allowed;
+      transform: none;
+    }
+    .btn-primary {
+      background: var(--accent);
+      border-color: var(--accent);
+      color: #fff;
+      box-shadow: 0 1px 2px rgba(94, 106, 210, 0.3), 0 4px 12px rgba(94, 106, 210, 0.2);
+    }
+    .btn-primary:hover { background: var(--accent-hover); border-color: var(--accent-hover); }
+    .btn-icon {
+      width: 40px;
+      height: 40px;
+      padding: 0;
+      border-radius: 10px;
+    }
+    .timeline-wrap {
+      flex: 1;
+      min-width: 180px;
+      max-width: 360px;
+      display: flex;
+      flex-direction: column;
+      gap: 6px;
+    }
+    .timeline-wrap label {
+      font-size: 0.72rem;
+      font-weight: 500;
+      color: var(--text-tertiary);
+      text-transform: uppercase;
+      letter-spacing: 0.05em;
+    }
+    input[type="range"] {
+      -webkit-appearance: none;
+      appearance: none;
+      width: 100%;
+      height: 6px;
+      border-radius: 999px;
+      background: var(--bg-hover);
+      outline: none;
+    }
+    input[type="range"]::-webkit-slider-thumb {
+      -webkit-appearance: none;
+      width: 18px;
+      height: 18px;
+      border-radius: 50%;
+      background: #fff;
+      border: 2px solid var(--accent);
+      box-shadow: 0 1px 4px rgba(15, 23, 42, 0.15);
+      cursor: pointer;
+    }
+
+    /* Metrics row */
+    .metrics {
+      display: grid;
+      grid-template-columns: repeat(5, 1fr);
+      gap: 12px;
+      margin-bottom: 18px;
+    }
+    @media (max-width: 900px) {
+      .metrics { grid-template-columns: repeat(2, 1fr); }
+    }
+    .metric {
+      background: var(--bg-elevated);
+      border: 1px solid var(--border);
+      border-radius: var(--radius-sm);
+      padding: 14px 16px;
+      box-shadow: var(--shadow-sm);
+    }
+    .metric .label {
+      font-size: 0.72rem;
+      font-weight: 500;
+      color: var(--text-tertiary);
+      text-transform: uppercase;
+      letter-spacing: 0.05em;
+      margin-bottom: 6px;
+    }
+    .metric .value {
+      font-size: 1.35rem;
+      font-weight: 600;
+      letter-spacing: -0.03em;
+      font-variant-numeric: tabular-nums;
+    }
+    .metric .value.good { color: var(--good); }
+    .metric .value.bad { color: var(--bad); }
+    .metric .sub {
+      font-size: 0.75rem;
+      color: var(--text-secondary);
+      margin-top: 2px;
+    }
+
+    /* Main grid */
+    .grid {
+      display: grid;
+      grid-template-columns: 1.15fr 1fr;
+      gap: 16px;
+      margin-bottom: 16px;
+    }
+    @media (max-width: 900px) {
+      .grid { grid-template-columns: 1fr; }
+    }
+
+    .card {
+      background: var(--bg-elevated);
+      border: 1px solid var(--border);
+      border-radius: var(--radius);
+      box-shadow: var(--shadow);
+      overflow: hidden;
+    }
+    .card-header {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      padding: 14px 18px;
+      border-bottom: 1px solid var(--border);
+      gap: 12px;
+    }
+    .card-header h3 {
+      margin: 0;
+      font-size: 0.9rem;
+      font-weight: 600;
+      letter-spacing: -0.01em;
+    }
+    .card-header .tag {
+      font-size: 0.7rem;
+      font-weight: 500;
+      color: var(--text-secondary);
+      background: var(--bg-subtle);
+      padding: 3px 8px;
+      border-radius: 999px;
+    }
+    .card-body { padding: 16px 18px; }
+
+    /* Chart */
+    .chart-card .card-body { padding: 12px 12px 8px; }
+    #navChart {
+      width: 100%;
+      height: 200px;
+      display: block;
+    }
+    .chart-legend {
+      display: flex;
+      gap: 16px;
+      padding: 4px 8px 8px;
+      font-size: 0.75rem;
+      color: var(--text-secondary);
+    }
+    .chart-legend span::before {
+      content: "";
+      display: inline-block;
+      width: 8px;
+      height: 8px;
+      border-radius: 50%;
+      margin-right: 6px;
+      vertical-align: middle;
+    }
+    .chart-legend .nav::before { background: var(--accent); }
+    .chart-legend .cash::before { background: var(--text-tertiary); }
+
+    /* Portfolio bars */
+    .alloc-list { display: flex; flex-direction: column; gap: 10px; }
+    .alloc-row {
+      display: grid;
+      grid-template-columns: 64px 1fr 72px;
+      gap: 10px;
+      align-items: center;
+      font-size: 0.825rem;
+    }
+    .alloc-row .sym {
+      font-weight: 600;
+      font-variant-numeric: tabular-nums;
+      letter-spacing: -0.02em;
+    }
+    .alloc-row .sym.cash { color: var(--text-secondary); }
+    .bar-track {
+      height: 8px;
+      background: var(--bg-subtle);
+      border-radius: 999px;
+      overflow: hidden;
+    }
+    .bar-fill {
+      height: 100%;
+      border-radius: 999px;
+      background: linear-gradient(90deg, #5e6ad2, #8b5cf6);
+      transition: width 0.45s var(--ease);
+    }
+    .bar-fill.cash {
+      background: linear-gradient(90deg, #94a3b8, #cbd5e1);
+    }
+    .alloc-row .mv {
+      text-align: right;
+      font-variant-numeric: tabular-nums;
+      color: var(--text-secondary);
+      font-size: 0.8rem;
+    }
+
+    /* Decision */
+    .view-text {
+      font-size: 0.9rem;
+      color: var(--text);
+      line-height: 1.55;
+      margin: 0 0 14px;
+      padding: 12px 14px;
+      background: var(--bg-subtle);
+      border-radius: var(--radius-sm);
+      border-left: 3px solid var(--accent);
+    }
+    .orders-table {
+      width: 100%;
+      border-collapse: collapse;
+      font-size: 0.825rem;
+    }
+    .orders-table th {
+      text-align: left;
+      font-weight: 500;
+      color: var(--text-tertiary);
+      font-size: 0.7rem;
+      text-transform: uppercase;
+      letter-spacing: 0.04em;
+      padding: 0 0 8px;
+      border-bottom: 1px solid var(--border);
+    }
+    .orders-table td {
+      padding: 9px 0;
+      border-bottom: 1px solid var(--border);
+      font-variant-numeric: tabular-nums;
+      vertical-align: middle;
+    }
+    .orders-table tr:last-child td { border-bottom: none; }
+    .side {
+      display: inline-flex;
+      font-size: 0.7rem;
+      font-weight: 600;
+      text-transform: uppercase;
+      letter-spacing: 0.04em;
+      padding: 2px 7px;
+      border-radius: 4px;
+    }
+    .side.buy { color: var(--good); background: var(--good-soft); }
+    .side.sell { color: var(--bad); background: var(--bad-soft); }
+    .empty-state {
+      text-align: center;
+      padding: 28px 16px;
+      color: var(--text-secondary);
+      font-size: 0.9rem;
+    }
+    .empty-state .big {
+      font-size: 1.1rem;
+      font-weight: 600;
+      color: var(--text);
+      margin-bottom: 4px;
+    }
+
+    /* Market */
+    .market-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fill, minmax(140px, 1fr));
+      gap: 8px;
+    }
+    .mkt-chip {
+      background: var(--bg-subtle);
+      border-radius: var(--radius-xs);
+      padding: 10px 12px;
+      transition: background 0.15s;
+    }
+    .mkt-chip:hover { background: var(--bg-hover); }
+    .mkt-chip .top {
+      display: flex;
+      justify-content: space-between;
+      align-items: baseline;
+      margin-bottom: 2px;
+    }
+    .mkt-chip .sym { font-weight: 600; font-size: 0.825rem; }
+    .mkt-chip .cls {
+      font-size: 0.65rem;
+      color: var(--text-tertiary);
+      text-transform: uppercase;
+    }
+    .mkt-chip .ret {
+      font-size: 0.8rem;
+      font-weight: 500;
+      font-variant-numeric: tabular-nums;
+    }
+    .mkt-chip .ret.good { color: var(--good); }
+    .mkt-chip .ret.bad { color: var(--bad); }
+    .mkt-chip .price {
+      font-size: 0.75rem;
+      color: var(--text-secondary);
+      font-variant-numeric: tabular-nums;
+    }
+
+    /* News + rules */
+    .news-item {
+      padding: 10px 0;
+      border-bottom: 1px solid var(--border);
+    }
+    .news-item:last-child { border-bottom: none; }
+    .news-item .meta {
+      font-size: 0.72rem;
+      color: var(--text-tertiary);
+      margin-bottom: 3px;
+      font-variant-numeric: tabular-nums;
+    }
+    .news-item .headline {
+      font-size: 0.85rem;
+      font-weight: 500;
+      letter-spacing: -0.01em;
+    }
+
+    .rules-grid {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 10px;
+    }
+    .rule {
+      background: var(--bg-subtle);
+      border-radius: var(--radius-xs);
+      padding: 10px 12px;
+    }
+    .rule .k {
+      font-size: 0.7rem;
+      color: var(--text-tertiary);
+      margin-bottom: 2px;
+    }
+    .rule .v {
+      font-size: 0.875rem;
+      font-weight: 600;
+      font-variant-numeric: tabular-nums;
+    }
+
+    /* Principles strip */
+    .principles {
+      display: grid;
+      grid-template-columns: repeat(4, 1fr);
+      gap: 10px;
+      margin-top: 8px;
+    }
+    @media (max-width: 900px) {
+      .principles { grid-template-columns: 1fr 1fr; }
+    }
+    .principle {
+      background: var(--bg-elevated);
+      border: 1px solid var(--border);
+      border-radius: var(--radius-sm);
+      padding: 14px 14px;
+      font-size: 0.8rem;
+      color: var(--text-secondary);
+      line-height: 1.45;
+      box-shadow: var(--shadow-sm);
+    }
+    .principle::before {
+      content: "";
+      display: block;
+      width: 20px;
+      height: 3px;
+      border-radius: 2px;
+      background: var(--accent);
+      margin-bottom: 10px;
+      opacity: 0.7;
+    }
+
+    footer.foot {
+      margin-top: 32px;
+      text-align: center;
+      font-size: 0.78rem;
+      color: var(--text-tertiary);
+    }
+    footer.foot a { color: var(--accent); text-decoration: none; }
+
+    .viol-pill {
+      display: inline-flex;
+      align-items: center;
+      gap: 4px;
+      background: var(--bad-soft);
+      color: var(--bad);
+      font-size: 0.72rem;
+      font-weight: 600;
+      padding: 3px 8px;
+      border-radius: 999px;
+    }
+
+    @keyframes fadeUp {
+      from { opacity: 0; transform: translateY(6px); }
+      to { opacity: 1; transform: translateY(0); }
+    }
+    .fade { animation: fadeUp 0.35s var(--ease); }
+
+    .kbd {
+      font-family: var(--mono);
+      font-size: 0.7rem;
+      background: var(--bg-subtle);
+      border: 1px solid var(--border-strong);
+      border-radius: 4px;
+      padding: 1px 5px;
+      color: var(--text-secondary);
+    }
+  </style>
+</head>
+<body>
+  <div class="app">
+    <header class="top">
+      <div class="brand">
+        <div class="brand-row">
+          <div class="logo" aria-hidden="true"></div>
+          <h1>Trading Bench</h1>
+          <span class="badge">Interactive learn mode</span>
+        </div>
+        <p id="subtitle">Step through a real episode. See what the agent sees, what it decides, and how the exchange settles it.</p>
+      </div>
+      <div class="header-controls">
+        <select id="runSelect" class="run-select" aria-label="Select episode"></select>
+      </div>
+    </header>
+
+    <!-- Pipeline explainer -->
+    <section class="pipeline-card">
+      <div class="pipeline-head">
+        <h2>The weekly loop</h2>
+        <span class="hint">Click a stage · auto-highlights as you scrub steps</span>
+      </div>
+      <div class="pipeline" id="pipeline"></div>
+      <div class="phase-detail" id="phaseDetail"></div>
+    </section>
+
+    <!-- Transport -->
+    <div class="controls-bar">
+      <div class="step-meta">
+        <div class="week" id="weekLabel">Week 1 of 12</div>
+        <div class="date" id="dateLabel">as of —</div>
+      </div>
+      <div class="timeline-wrap">
+        <label for="stepSlider">Episode progress</label>
+        <input type="range" id="stepSlider" min="0" max="11" value="0" step="1" />
+      </div>
+      <div class="transport">
+        <button class="btn btn-icon" id="btnPrev" title="Previous step (←)" aria-label="Previous">
+          <svg width="16" height="16" viewBox="0 0 16 16" fill="none"><path d="M10 3L5 8l5 5" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round"/></svg>
+        </button>
+        <button class="btn btn-primary" id="btnPlay" title="Play / Pause (Space)">
+          <svg id="playIcon" width="14" height="14" viewBox="0 0 14 14" fill="currentColor"><path d="M3 2.5v9l8-4.5L3 2.5z"/></svg>
+          <span id="playLabel">Play</span>
+        </button>
+        <button class="btn btn-icon" id="btnNext" title="Next step (→)" aria-label="Next">
+          <svg width="16" height="16" viewBox="0 0 16 16" fill="none"><path d="M6 3l5 5-5 5" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round"/></svg>
+        </button>
+      </div>
+    </div>
+
+    <!-- KPI row -->
+    <div class="metrics" id="metrics"></div>
+
+    <!-- Chart full width -->
+    <div class="card chart-card" style="margin-bottom:16px">
+      <div class="card-header">
+        <h3>Portfolio NAV</h3>
+        <span class="tag" id="chartTag">through this step</span>
+      </div>
+      <div class="card-body">
+        <svg id="navChart" viewBox="0 0 720 200" preserveAspectRatio="none"></svg>
+        <div class="chart-legend">
+          <span class="nav">NAV</span>
+          <span class="cash">Cash</span>
+        </div>
+      </div>
+    </div>
+
+    <div class="grid">
+      <!-- Left: what agent sees -->
+      <div class="card fade" id="observeCard">
+        <div class="card-header">
+          <h3>What the agent sees</h3>
+          <span class="tag">Observation · as of close</span>
+        </div>
+        <div class="card-body">
+          <div style="margin-bottom:16px">
+            <div style="font-size:0.72rem;font-weight:500;color:var(--text-tertiary);text-transform:uppercase;letter-spacing:0.05em;margin-bottom:10px">Allocation</div>
+            <div class="alloc-list" id="allocList"></div>
+          </div>
+          <div style="margin-bottom:16px">
+            <div style="font-size:0.72rem;font-weight:500;color:var(--text-tertiary);text-transform:uppercase;letter-spacing:0.05em;margin-bottom:10px">Market movers (1-week)</div>
+            <div class="market-grid" id="marketGrid"></div>
+          </div>
+          <div>
+            <div style="font-size:0.72rem;font-weight:500;color:var(--text-tertiary);text-transform:uppercase;letter-spacing:0.05em;margin-bottom:6px">News (capped & ranked)</div>
+            <div id="newsList"></div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Right: decision + fills -->
+      <div>
+        <div class="card fade" style="margin-bottom:16px" id="decideCard">
+          <div class="card-header">
+            <h3>What the agent decides</h3>
+            <span class="tag" id="modelTag">—</span>
+          </div>
+          <div class="card-body">
+            <p class="view-text" id="portfolioView"></p>
+            <div id="ordersWrap"></div>
+          </div>
+        </div>
+
+        <div class="card fade" style="margin-bottom:16px" id="fillCard">
+          <div class="card-header">
+            <h3>What the exchange does</h3>
+            <span class="tag">Validate → fill at next open</span>
+          </div>
+          <div class="card-body" id="fillsBody"></div>
+        </div>
+
+        <div class="card fade" id="rulesCard">
+          <div class="card-header">
+            <h3>Rules (identical for every model)</h3>
+            <span class="tag">Enforced by sim</span>
+          </div>
+          <div class="card-body">
+            <div class="rules-grid" id="rulesGrid"></div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <div class="principles" id="principles"></div>
+
+    <footer class="foot">
+      Fake money only · Keyboard: <span class="kbd">←</span> <span class="kbd">→</span> step · <span class="kbd">Space</span> play
+      · <span id="runIdFoot"></span>
+    </footer>
+  </div>
+
+  <script src="data.js"></script>
+  <script>
+    /* ---------- state ---------- */
+    const CATALOG = window.TB_CATALOG || {};
+    let data = window.TB_DATA;
+    let stepIdx = 0;
+    let phaseIdx = 0;
+    let playing = false;
+    let playTimer = null;
+
+    const $ = (id) => document.getElementById(id);
+
+    /* ---------- init catalog ---------- */
+    function initCatalog() {
+      const sel = $("runSelect");
+      const keys = Object.keys(CATALOG);
+      if (keys.length === 0 && data) {
+        CATALOG[data.run_id || "run"] = data;
+        keys.push(data.run_id || "run");
+      }
+      sel.innerHTML = keys.map((k) => {
+        const m = CATALOG[k];
+        const model = (m.manifest && m.manifest.model) || k;
+        const ret = m.metrics ? (m.metrics.total_return * 100).toFixed(1) + "%" : "";
+        return `<option value="${k}">${model} · ${ret}</option>`;
+      }).join("");
+      sel.addEventListener("change", () => {
+        data = CATALOG[sel.value];
+        stepIdx = 0;
+        stopPlay();
+        renderAll();
+      });
+      if (keys.length) data = CATALOG[keys[0]];
+    }
+
+    /* ---------- helpers ---------- */
+    const fmtUsd = (n) =>
+      n == null ? "—" : "$" + Number(n).toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+    const fmtPct = (n, digits = 1) =>
+      n == null ? "—" : (n >= 0 ? "+" : "") + (n * 100).toFixed(digits) + "%";
+    const clsRet = (n) => (n == null ? "" : n >= 0 ? "good" : "bad");
+
+    function ledgerThroughStep(s) {
+      return (data.ledger || []).filter((r) => r.step <= s);
+    }
+
+    /* ---------- pipeline ---------- */
+    function renderPipeline() {
+      const stages = data.guide.pipeline;
+      const el = $("pipeline");
+      el.innerHTML = stages
+        .map((s, i) => {
+          const conn =
+            i < stages.length - 1
+              ? `<div class="pipe-connector">→</div>`
+              : "";
+          return `
+            <div class="pipe-step ${i === phaseIdx ? "active" : ""}" data-phase="${i}">
+              <div class="num">0${i + 1}</div>
+              <div class="label">${s.label}</div>
+              <div class="mini">${s.title}</div>
+            </div>${conn}`;
+        })
+        .join("");
+      el.querySelectorAll(".pipe-step").forEach((node) => {
+        node.addEventListener("click", () => {
+          phaseIdx = Number(node.dataset.phase);
+          renderPipeline();
+          renderPhaseDetail();
+        });
+      });
+      renderPhaseDetail();
+    }
+
+    function renderPhaseDetail() {
+      const s = data.guide.pipeline[phaseIdx];
+      $("phaseDetail").innerHTML = `<strong>${s.title}</strong>${s.body}`;
+    }
+
+    /* ---------- metrics ---------- */
+    function renderMetrics() {
+      const step = data.steps[stepIdx];
+      const port = step.portfolio;
+      const after = step.ledger_after || {};
+      const start = 1000;
+      const navNow = after.nav != null ? after.nav : port.nav;
+      const ret = navNow / start - 1;
+      const m = data.metrics || {};
+      const fills = step.fills || [];
+      const viols = step.last_step_violations || [];
+      const nPos =
+        after.positions && typeof after.positions === "object"
+          ? Object.keys(after.positions).length
+          : (port.positions || []).length;
+
+      $("metrics").innerHTML = `
+        <div class="metric">
+          <div class="label">NAV (after fill)</div>
+          <div class="value ${clsRet(ret)}">${fmtUsd(navNow)}</div>
+          <div class="sub">from ${fmtUsd(start)}</div>
+        </div>
+        <div class="metric">
+          <div class="label">Episode return</div>
+          <div class="value ${clsRet(ret)}">${fmtPct(ret)}</div>
+          <div class="sub">final ${fmtPct(m.total_return)}</div>
+        </div>
+        <div class="metric">
+          <div class="label">Cash</div>
+          <div class="value">${fmtUsd(after.cash != null ? after.cash : port.cash)}</div>
+          <div class="sub">${nPos} positions open</div>
+        </div>
+        <div class="metric">
+          <div class="label">Fills this week</div>
+          <div class="value">${fills.length}</div>
+          <div class="sub">${fmtUsd(fills.reduce((a, f) => a + (f.notional || 0), 0))} notional</div>
+        </div>
+        <div class="metric">
+          <div class="label">Violations (prior)</div>
+          <div class="value">${viols.length}</div>
+          <div class="sub">${m.violation_count || 0} total episode</div>
+        </div>
+      `;
+    }
+
+    /* ---------- chart ---------- */
+    function renderChart() {
+      const svg = $("navChart");
+      const series = ledgerThroughStep(stepIdx);
+      const w = 720, h = 200, pad = { t: 16, r: 16, b: 28, l: 48 };
+      const iw = w - pad.l - pad.r;
+      const ih = h - pad.t - pad.b;
+
+      if (!series.length) {
+        svg.innerHTML = "";
+        return;
+      }
+
+      const navs = series.map((d) => d.nav);
+      const cashs = series.map((d) => d.cash);
+      let yMin = Math.min(...navs, ...cashs, 1000) * 0.98;
+      let yMax = Math.max(...navs, ...cashs, 1000) * 1.02;
+      if (yMax - yMin < 20) {
+        yMin -= 10;
+        yMax += 10;
+      }
+
+      const x = (i) => pad.l + (i / Math.max(1, series.length - 1)) * iw;
+      const y = (v) => pad.t + ih - ((v - yMin) / (yMax - yMin)) * ih;
+
+      const line = (vals) =>
+        vals.map((v, i) => `${i === 0 ? "M" : "L"}${x(i).toFixed(1)},${y(v).toFixed(1)}`).join(" ");
+
+      const areaNav =
+        line(navs) +
+        ` L${x(series.length - 1).toFixed(1)},${(pad.t + ih).toFixed(1)} L${x(0).toFixed(1)},${(pad.t + ih).toFixed(1)} Z`;
+
+      // y ticks
+      const ticks = 4;
+      let grid = "";
+      for (let i = 0; i <= ticks; i++) {
+        const v = yMin + ((yMax - yMin) * i) / ticks;
+        const yy = y(v);
+        grid += `<line x1="${pad.l}" y1="${yy}" x2="${w - pad.r}" y2="${yy}" stroke="rgba(15,23,42,0.06)" />`;
+        grid += `<text x="${pad.l - 8}" y="${yy + 3}" text-anchor="end" fill="#94a3b8" font-size="10" font-family="Inter,sans-serif">$${Math.round(v)}</text>`;
+      }
+
+      // step markers
+      let markers = "";
+      const stepFirst = {};
+      series.forEach((d, i) => {
+        if (stepFirst[d.step] == null) stepFirst[d.step] = i;
+      });
+      Object.values(stepFirst).forEach((i) => {
+        markers += `<line x1="${x(i)}" y1="${pad.t}" x2="${x(i)}" y2="${pad.t + ih}" stroke="rgba(94,106,210,0.12)" stroke-dasharray="3 3"/>`;
+      });
+
+      const last = series[series.length - 1];
+      svg.innerHTML = `
+        <defs>
+          <linearGradient id="navFill" x1="0" y1="0" x2="0" y2="1">
+            <stop offset="0%" stop-color="#5e6ad2" stop-opacity="0.18"/>
+            <stop offset="100%" stop-color="#5e6ad2" stop-opacity="0"/>
+          </linearGradient>
+        </defs>
+        ${grid}
+        ${markers}
+        <path d="${areaNav}" fill="url(#navFill)"/>
+        <path d="${line(cashs)}" fill="none" stroke="#94a3b8" stroke-width="1.5" stroke-dasharray="4 3" opacity="0.85"/>
+        <path d="${line(navs)}" fill="none" stroke="#5e6ad2" stroke-width="2.25" stroke-linecap="round" stroke-linejoin="round"/>
+        <circle cx="${x(series.length - 1)}" cy="${y(last.nav)}" r="4.5" fill="#fff" stroke="#5e6ad2" stroke-width="2"/>
+        <text x="${pad.l}" y="${h - 6}" fill="#94a3b8" font-size="10" font-family="Inter,sans-serif">${series[0].date}</text>
+        <text x="${w - pad.r}" y="${h - 6}" text-anchor="end" fill="#94a3b8" font-size="10" font-family="Inter,sans-serif">${last.date}</text>
+      `;
+      $("chartTag").textContent = `through week ${stepIdx + 1} · ${series.length} daily marks`;
+    }
+
+    /* ---------- allocation ---------- */
+    function renderAlloc() {
+      const step = data.steps[stepIdx];
+      const port = step.portfolio;
+      const nav = port.nav || 1;
+      const items = [
+        { symbol: "CASH", weight: port.cash / nav, mv: port.cash, cash: true },
+        ...port.positions
+          .slice()
+          .sort((a, b) => (b.weight || 0) - (a.weight || 0))
+          .map((p) => ({
+            symbol: p.symbol,
+            weight: p.weight || 0,
+            mv: p.market_value,
+            cash: false,
+          })),
+      ];
+      $("allocList").innerHTML = items
+        .map(
+          (it) => `
+        <div class="alloc-row">
+          <div class="sym ${it.cash ? "cash" : ""}">${it.symbol}</div>
+          <div class="bar-track"><div class="bar-fill ${it.cash ? "cash" : ""}" style="width:${Math.min(100, it.weight * 100).toFixed(1)}%"></div></div>
+          <div class="mv">${fmtUsd(it.mv)}</div>
+        </div>`
+        )
+        .join("");
+    }
+
+    /* ---------- market + news ---------- */
+    function renderMarket() {
+      const step = data.steps[stepIdx];
+      const top = step.market_top || [];
+      $("marketGrid").innerHTML = top
+        .map((m) => {
+          const r = m.ret_1w;
+          return `
+            <div class="mkt-chip">
+              <div class="top">
+                <span class="sym">${m.symbol}</span>
+                <span class="cls">${(m.asset_class || "").slice(0, 3)}</span>
+              </div>
+              <div class="ret ${clsRet(r)}">${fmtPct(r)}</div>
+              <div class="price">${fmtUsd(m.last)}</div>
+            </div>`;
+        })
+        .join("");
+
+      const news = step.news || [];
+      if (!news.length) {
+        $("newsList").innerHTML =
+          `<div class="empty-state" style="padding:12px 0;font-size:0.825rem">No news in this observation (or mode withholds it).</div>`;
+      } else {
+        $("newsList").innerHTML = news
+          .map(
+            (n) => `
+          <div class="news-item">
+            <div class="meta">${(n.published_at || "").slice(0, 10)} · ${n.symbol || "macro"}</div>
+            <div class="headline">${escapeHtml(n.headline || "")}</div>
+          </div>`
+          )
+          .join("");
+      }
+    }
+
+    /* ---------- decision + fills ---------- */
+    function renderDecision() {
+      const step = data.steps[stepIdx];
+      const d = step.decision || {};
+      $("portfolioView").textContent = d.portfolio_view || "(no portfolio view)";
+      $("modelTag").textContent = (data.manifest && data.manifest.model) || "agent";
+
+      const orders = d.orders || [];
+      if (!orders.length) {
+        $("ordersWrap").innerHTML = `
+          <div class="empty-state">
+            <div class="big">Hold</div>
+            Empty orders are first-class — no churn penalty for doing nothing.
+          </div>`;
+      } else {
+        $("ordersWrap").innerHTML = `
+          <table class="orders-table">
+            <thead><tr><th>Side</th><th>Symbol</th><th>Notional</th><th>Conf.</th><th>Thesis</th></tr></thead>
+            <tbody>
+              ${orders
+                .map(
+                  (o) => `
+                <tr>
+                  <td><span class="side ${o.side}">${o.side}</span></td>
+                  <td style="font-weight:600">${o.symbol}</td>
+                  <td>${fmtUsd(o.notional_usd)}</td>
+                  <td>${o.confidence != null ? (o.confidence * 100).toFixed(0) + "%" : "—"}</td>
+                  <td style="color:var(--text-secondary);max-width:180px">${escapeHtml((o.thesis || "").slice(0, 80))}</td>
+                </tr>`
+                )
+                .join("")}
+            </tbody>
+          </table>`;
+      }
+
+      // fills
+      const fills = step.fills || [];
+      const validated = step.validated || [];
+      const rejected = validated.filter((v) => !v.accepted);
+      let html = "";
+      if (rejected.length) {
+        html += rejected
+          .map(
+            (v) =>
+              `<div style="margin-bottom:8px"><span class="viol-pill">${v.violation?.code || "REJECT"}</span>
+               <span style="font-size:0.8rem;color:var(--text-secondary);margin-left:8px">${escapeHtml(v.violation?.detail || "")}</span></div>`
+          )
+          .join("");
+      }
+      if (!fills.length && !rejected.length) {
+        html += `<div class="empty-state"><div class="big">No fills</div>Nothing executed this week.</div>`;
+      } else if (fills.length) {
+        html += `
+          <table class="orders-table">
+            <thead><tr><th>Side</th><th>Symbol</th><th>Qty</th><th>Fill px</th><th>Fee</th></tr></thead>
+            <tbody>
+              ${fills
+                .map(
+                  (f) => `
+                <tr>
+                  <td><span class="side ${f.side}">${f.side}</span></td>
+                  <td style="font-weight:600">${f.symbol}</td>
+                  <td>${Number(f.qty).toFixed(4)}</td>
+                  <td>${fmtUsd(f.fill_price)}</td>
+                  <td>${fmtUsd(f.fee)}</td>
+                </tr>`
+                )
+                .join("")}
+            </tbody>
+          </table>
+          <p style="margin:12px 0 0;font-size:0.78rem;color:var(--text-secondary)">
+            Fill = next open × (1 ± slippage). Commission 5 bps. Fractional shares allowed.
+          </p>`;
+      }
+      $("fillsBody").innerHTML = html;
+    }
+
+    function renderRules() {
+      const rules = data.steps[stepIdx].rules || {};
+      const items = [
+        ["Max position", ((rules.max_position_weight || 0.25) * 100).toFixed(0) + "%"],
+        ["Min order", fmtUsd(rules.min_order_usd || 10)],
+        ["Shorting", rules.shorting ? "yes" : "no"],
+        ["Leverage", rules.leverage ? "yes" : "no"],
+        ["Fees", (rules.fees_bps || 5) + " bps"],
+        ["Fill", rules.fill || "next open"],
+        ["Slip equity", (rules.slippage_bps?.equity || 10) + " bps"],
+        ["Slip crypto", (rules.slippage_bps?.crypto || 25) + " bps"],
+      ];
+      $("rulesGrid").innerHTML = items
+        .map(
+          ([k, v]) => `
+        <div class="rule"><div class="k">${k}</div><div class="v">${v}</div></div>`
+        )
+        .join("");
+    }
+
+    function renderPrinciples() {
+      $("principles").innerHTML = (data.guide.principles || [])
+        .map((p) => `<div class="principle">${escapeHtml(p)}</div>`)
+        .join("");
+    }
+
+    function renderStepChrome() {
+      const n = data.steps.length;
+      const step = data.steps[stepIdx];
+      $("weekLabel").textContent = `Week ${stepIdx + 1} of ${n}`;
+      $("dateLabel").textContent = `as of ${step.as_of} · decision day close → fill next open`;
+      const slider = $("stepSlider");
+      slider.max = String(n - 1);
+      slider.value = String(stepIdx);
+      $("btnPrev").disabled = stepIdx <= 0;
+      $("btnNext").disabled = stepIdx >= n - 1;
+      $("runIdFoot").textContent = data.run_id || "";
+
+      // auto phase: week 0 with orders -> decide/fill emphasis; hold weeks -> observe/mark
+      const hasOrders = (step.decision?.orders || []).length > 0;
+      if (hasOrders) phaseIdx = stepIdx === 0 ? 1 : 2;
+      else phaseIdx = 0;
+    }
+
+    function escapeHtml(s) {
+      return String(s)
+        .replace(/&/g, "&amp;")
+        .replace(/</g, "&lt;")
+        .replace(/>/g, "&gt;")
+        .replace(/"/g, "&quot;");
+    }
+
+    function renderAll() {
+      if (!data || !data.steps || !data.steps.length) {
+        document.querySelector(".app").innerHTML =
+          "<p style='padding:40px;text-align:center;color:#64748b'>No run data. Run: <code>tradingbench viz --run runs/...</code></p>";
+        return;
+      }
+      $("subtitle").textContent = data.guide.subtitle;
+      renderStepChrome();
+      renderPipeline();
+      renderMetrics();
+      renderChart();
+      renderAlloc();
+      renderMarket();
+      renderDecision();
+      renderRules();
+      renderPrinciples();
+    }
+
+    /* ---------- transport ---------- */
+    function go(delta) {
+      const n = data.steps.length;
+      stepIdx = Math.max(0, Math.min(n - 1, stepIdx + delta));
+      renderAll();
+    }
+    function stopPlay() {
+      playing = false;
+      if (playTimer) clearInterval(playTimer);
+      playTimer = null;
+      $("playLabel").textContent = "Play";
+      $("playIcon").innerHTML = '<path d="M3 2.5v9l8-4.5L3 2.5z"/>';
+    }
+    function togglePlay() {
+      if (playing) {
+        stopPlay();
+        return;
+      }
+      playing = true;
+      $("playLabel").textContent = "Pause";
+      $("playIcon").innerHTML = '<rect x="3" y="2.5" width="2.5" height="9" rx="0.5"/><rect x="8.5" y="2.5" width="2.5" height="9" rx="0.5"/>';
+      playTimer = setInterval(() => {
+        if (stepIdx >= data.steps.length - 1) {
+          stopPlay();
+          return;
+        }
+        go(1);
+      }, 1600);
+    }
+
+    /* ---------- wire ---------- */
+    function wire() {
+      $("btnPrev").addEventListener("click", () => { stopPlay(); go(-1); });
+      $("btnNext").addEventListener("click", () => { stopPlay(); go(1); });
+      $("btnPlay").addEventListener("click", togglePlay);
+      $("stepSlider").addEventListener("input", (e) => {
+        stopPlay();
+        stepIdx = Number(e.target.value);
+        renderAll();
+      });
+      window.addEventListener("keydown", (e) => {
+        if (e.target.matches("input,textarea,select")) return;
+        if (e.key === "ArrowRight") { e.preventDefault(); stopPlay(); go(1); }
+        if (e.key === "ArrowLeft") { e.preventDefault(); stopPlay(); go(-1); }
+        if (e.key === " ") { e.preventDefault(); togglePlay(); }
+      });
+    }
+
+    initCatalog();
+    wire();
+    renderAll();
+  </script>
+</body>
+</html>

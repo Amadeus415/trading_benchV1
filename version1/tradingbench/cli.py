@@ -141,5 +141,121 @@ def compare_cmd(runs_dir: str, campaign: str, out: str | None) -> None:
     click.echo(f"Wrote {out_path} ({len(metrics)} episodes)")
 
 
+@main.command("viz")
+@click.option(
+    "--run",
+    "runs",
+    multiple=True,
+    type=click.Path(exists=True),
+    help="Run directory (repeatable). Defaults to learn_* runs if present.",
+)
+@click.option("--runs-dir", default="runs", show_default=True, help="Search dir when --run omitted")
+@click.option("--out", default="viz", show_default=True, help="Output directory for index.html + data.js")
+@click.option("--open/--no-open", "open_browser", default=True, help="Open in browser")
+@click.option("--serve/--no-serve", default=False, help="Serve on localhost (avoids file:// quirks)")
+@click.option("--port", default=8765, show_default=True, type=int)
+def viz_cmd(
+    runs: tuple[str, ...],
+    runs_dir: str,
+    out: str,
+    open_browser: bool,
+    serve: bool,
+    port: int,
+) -> None:
+    """Build an interactive learning visualization from episode run(s)."""
+    import http.server
+    import socketserver
+    import threading
+    import webbrowser
+
+    from tradingbench.viz.export import export_run_bundle, write_data_js
+
+    run_paths: list[Path] = [Path(r) for r in runs]
+    if not run_paths:
+        root = Path(runs_dir)
+        # Prefer learn_* demos, then any completed run
+        candidates = sorted(root.glob("learn_*/manifest.json"))
+        if not candidates:
+            candidates = sorted(root.glob("*/manifest.json"))
+        # skip campaign aggregate folders
+        run_paths = [c.parent for c in candidates if not c.parent.name.startswith("_")]
+        if not run_paths:
+            raise click.ClickException(
+                f"No runs found under {root}. Run an episode first, or pass --run PATH."
+            )
+        # keep at most a few for the dropdown
+        run_paths = run_paths[:6]
+
+    out_dir = Path(out)
+    out_dir.mkdir(parents=True, exist_ok=True)
+
+    # Ensure index.html is present
+    src_index = Path(__file__).resolve().parent.parent / "viz" / "index.html"
+    if not src_index.exists():
+        # package-adjacent fallback
+        src_index = Path(__file__).resolve().parents[1] / "viz" / "index.html"
+    dest_index = out_dir / "index.html"
+    if src_index.exists():
+        dest_index.write_text(src_index.read_text())
+    elif not dest_index.exists():
+        raise click.ClickException(f"Missing viz template at {src_index}")
+
+    catalog: dict = {}
+    for rp in run_paths:
+        bundle = export_run_bundle(rp, out_path=rp / "viz_bundle.json")
+        catalog[bundle["run_id"]] = bundle
+        click.echo(f"  bundled {bundle['run_id']} ({len(bundle['steps'])} steps)")
+
+    # data.js exposes both catalog and default TB_DATA
+    first = next(iter(catalog.values()))
+    payload = (
+        "window.TB_CATALOG = "
+        + json.dumps(catalog, default=str)
+        + ";\nwindow.TB_DATA = window.TB_CATALOG["
+        + json.dumps(first["run_id"])
+        + "];\n"
+    )
+    (out_dir / "data.js").write_text(payload)
+    click.echo(f"Wrote {out_dir / 'index.html'} + data.js ({len(catalog)} run(s))")
+
+    url = (out_dir / "index.html").resolve().as_uri()
+    if serve:
+        # serve out_dir so relative data.js loads cleanly
+        handler = http.server.SimpleHTTPRequestHandler
+        os_cwd = Path.cwd()
+
+        class QuietHandler(handler):
+            def log_message(self, format, *args):  # noqa: A003
+                pass
+
+        def _serve():
+            import os
+
+            os.chdir(out_dir)
+            with socketserver.TCPServer(("127.0.0.1", port), QuietHandler) as httpd:
+                httpd.serve_forever()
+
+        t = threading.Thread(target=_serve, daemon=True)
+        t.start()
+        url = f"http://127.0.0.1:{port}/index.html"
+        click.echo(f"Serving {url}  (Ctrl+C to stop)")
+        if open_browser:
+            webbrowser.open(url)
+        try:
+            t.join()
+        except KeyboardInterrupt:
+            click.echo("\nStopped.")
+        finally:
+            import os
+
+            os.chdir(os_cwd)
+    else:
+        if open_browser:
+            webbrowser.open(url)
+        click.echo(f"Open: {url}")
+        click.echo("Tip: use --serve if the browser blocks local data.js")
+
+
 if __name__ == "__main__":
     main()
+
