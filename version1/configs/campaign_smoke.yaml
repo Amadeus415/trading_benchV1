@@ -1,0 +1,27 @@
+# Tiny campaign for CI / smoke tests (few episodes, fast)
+campaign: smoke
+snapshot_id: 9b3b9f22157b
+
+episode:
+  starting_cash: 1000.0
+  cadence: weekly
+  steps: 4
+  max_position_weight: 0.25
+
+windows:
+  - {id: w1, start: 2025-01-06, track: historical}
+
+seeds: [1]
+
+models: []
+
+baselines:
+  - buy_and_hold
+  - random_agent
+  - momentum_lite
+
+modes:
+  - standard
+
+prompt_version: p1
+run_probe: false
