@@ -1,0 +1,74 @@
+# Trading Bench MVP — baseline campaign
+campaign: v1_baseline
+# snapshot_id is filled after `tradingbench build-snapshot`; also accepts any dir under snapshots/
+snapshot_id: 9b3b9f22157b  # or "auto" to pick first under snapshots/
+
+universe:
+  equity:
+    - AAPL
+    - MSFT
+    - NVDA
+    - GOOGL
+    - AMZN
+    - META
+    - TSLA
+    - JPM
+    - V
+    - UNH
+    - XOM
+    - JNJ
+    - WMT
+    - PG
+    - MA
+    - HD
+    - CVX
+    - MRK
+    - ABBV
+    - KO
+    - PEP
+    - COST
+    - AVGO
+    - LLY
+    - BAC
+  crypto:
+    - BTC
+    - ETH
+    - SOL
+    - LINK
+    - AVAX
+
+episode:
+  starting_cash: 1000.0
+  cadence: weekly
+  steps: 12
+  max_position_weight: 0.25
+
+# 4 windows × 3 seeds = 12 episodes per model (smoke-friendly; scale to 8×5 for full power)
+windows:
+  - {id: w1, start: 2024-01-08, track: historical}
+  - {id: w2, start: 2024-07-08, track: historical}
+  - {id: w3, start: 2025-01-06, track: historical}
+  - {id: w4, start: 2025-07-07, track: historical}
+
+seeds: [1, 2, 3]
+
+# LLM models (require API keys). Comment out for offline baseline-only runs.
+models: []
+  # - {id: luna,  provider: xai,    name: "grok-3-mini", temperature: 0.7, max_tokens: 2000}
+  # - {id: terra, provider: openai, name: "gpt-4o-mini", temperature: 0.7, max_tokens: 2000}
+
+baselines:
+  - buy_and_hold
+  - sixty_forty
+  - random_agent
+  - momentum_lite
+
+# Full contamination matrix is expensive; start with standard only.
+modes:
+  - standard
+  # - named_control
+  # - blind
+  # - synthetic
+
+prompt_version: p1
+run_probe: false

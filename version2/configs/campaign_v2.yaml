@@ -1,0 +1,95 @@
+# Trading Bench v2 — full MVP campaign shape (MVP_SPEC §10)
+campaign: v2_baseline
+snapshot_id: auto  # or explicit id under snapshots/
+
+universe:
+  equity:
+    - AAPL
+    - MSFT
+    - NVDA
+    - GOOGL
+    - AMZN
+    - META
+    - TSLA
+    - JPM
+    - V
+    - UNH
+    - XOM
+    - JNJ
+    - WMT
+    - PG
+    - MA
+    - HD
+    - CVX
+    - MRK
+    - ABBV
+    - KO
+    - PEP
+    - COST
+    - AVGO
+    - LLY
+    - BAC
+  crypto:
+    - BTC
+    - ETH
+    - SOL
+    - LINK
+    - AVAX
+
+episode:
+  starting_cash: 1000.0
+  cadence: weekly
+  steps: 12
+  max_position_weight: 0.25
+
+# 8 windows × 5 seeds = 40 episodes per model per cell (scale up when ready)
+windows:
+  - {id: w1, start: 2024-01-08, track: historical}
+  - {id: w2, start: 2024-04-08, track: historical}
+  - {id: w3, start: 2024-07-08, track: historical}
+  - {id: w4, start: 2024-10-07, track: historical}
+  - {id: w5, start: 2025-01-06, track: historical}
+  - {id: w6, start: 2025-04-07, track: historical}
+  - {id: w7, start: 2025-07-07, track: post_cutoff}
+  - {id: w8, start: 2025-10-06, track: post_cutoff}
+
+seeds: [1, 2, 3, 4, 5]
+
+# LLM models (require API keys). Comment out for offline baseline-only runs.
+models: []
+  # - {id: luna,  provider: xai,    name: "grok-3-mini", temperature: 0.7, max_tokens: 2000}
+  # - {id: terra, provider: openai, name: "gpt-4o-mini", temperature: 0.7, max_tokens: 2000}
+
+# Full quant baseline suite (§8.2). momentum_3m is the bar that matters.
+baselines:
+  - buy_and_hold
+  - equal_weight_rebal
+  - momentum_3m
+  - mean_reversion_3m
+  - ma_crossover
+  - sixty_forty
+  - random_agent
+
+# 2×2 mask factorial (§9.1)
+masks:
+  - bright
+  # - stock_blind
+  # - date_blind
+  # - blinded
+
+decision_modes:
+  - standard
+  # - memory_only
+
+price_paths:
+  - real
+  # - synthetic
+
+# Anchor-deep / others-shallow (§10)
+# anchor_model: luna
+# shallow_masks: [blinded]
+# shallow_decision_modes: [standard]
+
+prompt_version: p1
+run_probe: false
+run_attribution: true

@@ -1,0 +1,40 @@
+# Fast offline smoke: full baseline suite, one window, one seed
+campaign: smoke
+snapshot_id: auto
+
+episode:
+  starting_cash: 1000.0
+  cadence: weekly
+  steps: 4
+  max_position_weight: 0.25
+
+windows:
+  - {id: w1, start: 2025-01-06, track: historical}
+
+seeds: [1]
+
+models: []
+
+baselines:
+  - buy_and_hold
+  - equal_weight_rebal
+  - momentum_3m
+  - mean_reversion_3m
+  - ma_crossover
+  - sixty_forty
+  - random_agent
+  - momentum_lite
+
+masks:
+  - bright
+  - blinded
+
+decision_modes:
+  - standard
+
+price_paths:
+  - real
+
+prompt_version: p1
+run_probe: false
+run_attribution: true
