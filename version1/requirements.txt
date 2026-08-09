@@ -1,0 +1,7 @@
+numpy>=1.26
+pandas>=2.1
+pyarrow>=14.0
+pyyaml>=6.0
+click>=8.1
+jsonschema>=4.20
+pytest>=7.4

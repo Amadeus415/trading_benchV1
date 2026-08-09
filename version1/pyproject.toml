@@ -1,0 +1,33 @@
+[build-system]
+requires = ["setuptools>=68", "wheel"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "tradingbench"
+version = "0.1.0"
+description = "Trading Bench MVP — sequential decision-making benchmark for LLM trading agents"
+readme = "README.md"
+requires-python = ">=3.11"
+dependencies = [
+  "numpy>=1.26",
+  "pandas>=2.1",
+  "pyarrow>=14.0",
+  "pyyaml>=6.0",
+  "click>=8.1",
+  "jsonschema>=4.20",
+]
+
+[project.optional-dependencies]
+dev = ["pytest>=7.4", "pytest-cov>=4.1"]
+llm = ["openai>=1.0", "httpx>=0.25"]
+
+[project.scripts]
+tradingbench = "tradingbench.cli:main"
+
+[tool.setuptools.packages.find]
+where = ["."]
+include = ["tradingbench*"]
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]
+pythonpath = ["."]
