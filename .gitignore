@@ -1,0 +1,16 @@
+# Python
+__pycache__/
+*.py[cod]
+*.egg-info/
+.venv/
+venv/
+.pytest_cache/
+.coverage
+htmlcov/
+.DS_Store
+
+# Generated runtime artifacts (rebuild with CLI)
+version1/runs/*
+!version1/runs/.gitkeep
+version1/snapshots/*
+!version1/snapshots/.gitkeep
